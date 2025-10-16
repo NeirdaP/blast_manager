@@ -1,0 +1,181 @@
+QWidget {{
+    background-color: {primary};
+    selection-background-color: {highlight};
+}}
+
+QComboBox {{
+    background-color: {lighter};
+    border: solid 0px transparent;
+    border-radius: 3px;
+}}
+
+QComboBox::drop-down {{
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+    border-left-width: 1px;
+    border-left-color: {primary};
+    border-left-style: solid;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}}
+
+QComboBox::down-arrow {{
+    width: 10px;
+    height: 10px;
+    image: url({arrow});
+}}
+
+QToolTip {{
+    background-color: {primary};
+    color: {text};
+}}
+
+QListWidget {{
+    background-color: {primary};
+    alternate-background-color: {secondary};
+}}
+
+QPushButton {{
+    color: {text};
+    background-color: {lighter};
+}}
+
+QPushButton:disabled {{
+    background-color: {tertiary};
+}}
+
+QPushButton:pressed {{
+    background-color: {secondary};
+}}
+
+QTableView {{
+    color: {text};
+    gridline-color: {lighter};
+    alternate-background-color: {secondary};
+    selection-background-color: {highlight};
+}}
+
+QSlider::groove:horizontal {{
+    height: 6px;
+    border-radius:4px;
+}}
+
+QSlider::handle:horizontal {{
+    background-color: {text};
+    margin: -10px 0px;
+    width: 8px;
+    height: 10px;
+    border-radius: 4px;
+}}
+
+QSlider::add-page:horizontal {{
+    border-radius: 4px;
+    background: {secondary};
+    margin: 0.5px;
+}}
+
+QSlider::sub-page:horizontal {{
+    border-radius: 4px;
+    background: {text};
+    margin: 0.5px;
+}}
+
+QTextEdit {{
+    background-color: {lighter};
+}}
+
+QLineEdit {{
+    background-color: {lighter};
+}}
+
+QGroupBox QLabel {{
+    background-color: transparent;
+}}
+
+QGroupBox QCheckBox {{
+    background-color: transparent;
+}}
+
+QCheckBox::indicator {{
+    width: 13px;
+    height: 13px;
+}}
+
+QCheckBox::indicator::checked {{
+    background-color: {lighter};
+    image: url({check});
+}}
+
+QCheckBox::indicator::unchecked {{
+    background-color: {lighter};
+}}
+
+QCheckBox::indicator::checked:hover {{
+    background-color: {lighter};
+    border: 1px solid {highlight};
+    padding: -1px
+}}
+
+QCheckBox::indicator::unchecked:hover {{
+    background-color: {lighter};
+    border: 1px solid {highlight};
+    padding: -1px
+}}
+
+QGroupBox {{
+    background-color: {tertiary};
+    padding-top: 20px;
+    padding-left: 5px;
+    border: 0px solid transparent;
+}}
+
+QGroupBox::title {{
+    font-weight: bold;
+    margin-left: 6px;
+    margin-top: 6px;
+    color: {highlight}
+}}
+
+QTabWidget {{
+    background-color: {secondary};
+}}
+
+QTabWidget::pane {{
+    background: {primary};
+}}
+
+QTabBar::tab {{
+    font-size: 10pt;
+    width: 90px;
+    height: 35px;
+    background-color: {secondary};
+}}
+
+QTabBar::tab:selected {{
+    background-color: {primary_light};
+}}
+
+/* Scroll bar */
+QScrollBar::handle:vertical {{
+    border-radius: 3px;
+    background-color: {primary_light};
+    margin: 2px;
+    min-height: 20px;
+}}
+
+QScrollBar::handle:vertical:hover {{
+    background-color: #606088;
+}}
+
+QScrollBar::handle:vertical:pressed {{
+    background-color: #71719e;
+}}
+
+/* REMOVE ARROWS */
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
+    background: none;
+    border: none;
+    width: 0px;
+    height: 0px;
+}}
