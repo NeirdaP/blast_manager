@@ -311,6 +311,8 @@ class PlayBlastParams(CtrlWidget):
         )
 
         self.bg_color_options = self.playblast_panel.controller.get_bg_color_options()
+        print("AAAAAAA")
+        print(self.playblast_panel.controller.get_display_configs())
         self.display_configs = self.playblast_panel.controller.get_display_configs()
         self.hud_options = PlayBlastHUDParams()
         self.display_options = [display_option_type()

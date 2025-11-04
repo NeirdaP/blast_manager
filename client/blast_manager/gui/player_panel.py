@@ -171,10 +171,8 @@ class PlayerPanel(QtWidgets.QWidget):
         Opens the given blast in the player
         :param BlastInfo blast: blast to open
         """
-        print("OUGAGA")
         self.blast = blast
         self.sequence_dir.setPath(blast.seq_path())
-        print(blast.seq_path())
         self.player_frame_rate = blast.frame_rate
         self.time_line.setUpdateInterval(int(1000 / self.player_frame_rate))
         self.image_files = [image for image in self.sequence_dir.entryInfoList() if image.isFile()

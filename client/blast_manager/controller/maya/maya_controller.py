@@ -152,7 +152,7 @@ class MayaBlastController(BaseBlastController):
         MayaMotionBlurDisplayOption,
         MayaDepthOfFieldDisplayOption
     )
-    ALL_DISPLAY_TYPES = _DISPLAY_TYPE_TO_MENU_NAME.keys()
+    ALL_DISPLAY_TYPES = list(_DISPLAY_TYPE_TO_MENU_NAME.keys())
 
     def __init__(
             self,
@@ -808,8 +808,6 @@ class MayaBlastController(BaseBlastController):
                                                 defaultButton='Ok', dismissString='Ok')
                 else:
                     dest_sound_file = os.path.join(directory, filename)
-                    print(dest_sound_file)
-
                     shutil.copyfile(sound_file, dest_sound_file)
                     source_start = maya.cmds.sound(sound, q=True, sourceStart=True)
                     source_end = maya.cmds.sound(sound, q=True, sourceEnd=True)
