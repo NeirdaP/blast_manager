@@ -3,12 +3,12 @@ import os
 
 from . import houdini_utils
 from .. base_controller import (
-    BaseBlastController, PlayblastError, BlastInfo, AmbientOcclusionDisplayOption,
-    MotionBlurDisplayOption, AntiAliasingDisplayOption, DepthOfFieldDisplayOption
+    BaseBlastController, PlayblastError, BlastInfo, AmbientOcclusionRenderOption,
+    MotionBlurRenderOption, AntiAliasingRenderOption, DepthOfFieldRenderOption
 )
 
 
-class HoudiniAmbientOcclusionDisplayOption(AmbientOcclusionDisplayOption):
+class HoudiniAmbientOcclusionRenderOption(AmbientOcclusionRenderOption):
 
     def _store_to_restore(self):
         self._to_restore = {"ambient_occlusion": houdini_utils.get_ambient_occlusion(),
@@ -24,7 +24,7 @@ class HoudiniAmbientOcclusionDisplayOption(AmbientOcclusionDisplayOption):
         houdini_utils.set_viewport_lighting_mode(self._to_restore["lighting_mode"])
 
 
-class HoudiniMotionBlurDisplayOption(MotionBlurDisplayOption):
+class HoudiniMotionBlurRenderOption(MotionBlurRenderOption):
 
     def _store_to_restore(self):
         self._to_restore = houdini_utils.get_flipbook_motion_blur()
@@ -36,7 +36,7 @@ class HoudiniMotionBlurDisplayOption(MotionBlurDisplayOption):
         houdini_utils.set_flipbook_motion_blur(self._to_restore)
 
 
-class HoudiniDepthOfFieldDisplayOption(DepthOfFieldDisplayOption):
+class HoudiniDepthOfFieldRenderOption(DepthOfFieldRenderOption):
 
     def _store_to_restore(self):
         self._to_restore = houdini_utils.get_depth_of_field()
@@ -48,7 +48,7 @@ class HoudiniDepthOfFieldDisplayOption(DepthOfFieldDisplayOption):
         houdini_utils.set_depth_of_field(self._to_restore)
 
 
-class HoudiniAntiAliasingDisplayOption(AntiAliasingDisplayOption):
+class HoudiniAntiAliasingRenderOption(AntiAliasingRenderOption):
 
     def _store_to_restore(self):
         self._to_restore = houdini_utils.get_anti_aliasing()
@@ -70,11 +70,11 @@ class HoudiniBlastManager(BaseBlastController):
     the blast sound if one is used and its montage info (start, end, ...)
     https://www.notion.so/supamonks/SupaBlast-Manager-c42d365905fc4655a1c68c77338d00ba
     """
-    ALL_DISPLAY_OPTION_TYPES = (
-        HoudiniAmbientOcclusionDisplayOption,
-        HoudiniAntiAliasingDisplayOption,
-        HoudiniMotionBlurDisplayOption,
-        HoudiniDepthOfFieldDisplayOption,
+    ALL_RENDER_OPTION_TYPES = (
+        HoudiniAmbientOcclusionRenderOption,
+        HoudiniAntiAliasingRenderOption,
+        HoudiniMotionBlurRenderOption,
+        HoudiniDepthOfFieldRenderOption,
     )
 
     def __init__(
@@ -125,7 +125,7 @@ class HoudiniBlastManager(BaseBlastController):
 
         blast = (
             path, blast_type, blast.camera, blast.sounds, blast.start, blast.end, blast.display_types,
-            blast.bg_color, blast.display_options,
+            blast.bg_color, blast.render_options,
             blast.hud_options, blast.display_grid, blast.width, blast.height, blast.scale
         )
 
@@ -150,13 +150,13 @@ class HoudiniBlastManager(BaseBlastController):
 
     @contextlib.contextmanager
     def _blast_context(self, cam, start, end, display_types,
-                       bg_color, display_options, hud_options, display_grid):
+                       bg_color, render_options, hud_options, display_grid):
 
         restore_data = self._apply_display_overrides(display_grid)
         restore_data.update(self._apply_background_overrides(bg_color))
         restore_data.update(self._apply_camera_overrides(cam))
 
-        display_options_instances = self._apply_playblast_display_options(display_options)
+        render_options_instances = self._apply_playblast_render_options(render_options)
 
         try:
             yield
@@ -164,18 +164,18 @@ class HoudiniBlastManager(BaseBlastController):
             raise
 
         finally:
-            self._restore_display_options(display_options_instances)
+            self._restore_render_options(render_options_instances)
             self._restore_display_overrides(restore_data)
             self._restore_background_overrides(restore_data)
             self._restore_camera(restore_data)
 
     def _do_one_blast(self, path, blast_type, camera, sounds, start, end, display_types, bg_color,
-                      display_options, hud_options, display_grid, width, height, scale):
+                      render_options, hud_options, display_grid, width, height, scale):
 
         hou = self._get_hou()
 
         with self._blast_context(camera, start, end, display_types, bg_color,
-                                 display_options, hud_options, display_grid):
+                                 render_options, hud_options, display_grid):
             directory, filename = os.path.split(path)
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -197,15 +197,15 @@ class HoudiniBlastManager(BaseBlastController):
 
             scene.flipbook(scene.curViewport(), flip_book_settings)
 
-    def _apply_playblast_display_options(self, display_options):
-        display_options_instances = []
-        for display_option_type_name, active in display_options:
-            display_option = eval(display_option_type_name + '()')
-            display_option.set_active(active)
-            display_options_instances.append(display_option)
-            display_option.apply()
+    def _apply_playblast_render_options(self, render_options):
+        render_options_instances = []
+        for render_option_type_name, active in render_options:
+            render_option = eval(render_option_type_name + '()')
+            render_option.set_active(active)
+            render_options_instances.append(render_option)
+            render_option.apply()
 
-        return display_options_instances
+        return render_options_instances
 
     def _apply_camera_overrides(self, camera):
         restore_data = dict()

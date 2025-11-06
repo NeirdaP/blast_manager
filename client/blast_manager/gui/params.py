@@ -311,12 +311,10 @@ class PlayBlastParams(CtrlWidget):
         )
 
         self.bg_color_options = self.playblast_panel.controller.get_bg_color_options()
-        print("AAAAAAA")
-        print(self.playblast_panel.controller.get_display_configs())
         self.display_configs = self.playblast_panel.controller.get_display_configs()
         self.hud_options = PlayBlastHUDParams()
-        self.display_options = [display_option_type()
-                                for display_option_type in self.playblast_panel.controller.ALL_DISPLAY_OPTION_TYPES]
+        self.render_options = [render_option_type()
+                               for render_option_type in self.playblast_panel.controller.ALL_RENDER_OPTION_TYPES]
 
         self.default_scale_config_index = 0
         self.get_default_bg_color = self.playblast_panel.controller.get_default_bg_color()
@@ -358,8 +356,8 @@ class PlayBlastParams(CtrlWidget):
         )
         self.display_combo = self.add_combo(group, "Config")
 
-        for display_option in self.display_options:
-            display_option.build_controls(self, group)
+        for render_option in self.render_options:
+            render_option.build_controls(self, group)
 
         self.display_grid = self.add_bool(group, "Display grid")
 
@@ -407,8 +405,8 @@ class PlayBlastParams(CtrlWidget):
                 self.camera.setCurrentIndex(i)
                 break
         self.sound.setCurrentText(self.playblast_panel.controller.get_current_audio())
-        for display_option in self.display_options:
-            display_option.set_default()
+        for render_option in self.render_options:
+            render_option.set_default()
         self.hud_options.set_defaults()
 
     def set_default_range(self):
@@ -549,8 +547,8 @@ class PlayBlastParams(CtrlWidget):
             raise self.ParamError("Display Config")
 
         try:
-            ret["display_options"] = [
-                (display_option.__class__.__name__, display_option.active) for display_option in self.display_options
+            ret["render_options"] = [
+                (render_option.__class__.__name__, render_option.active) for render_option in self.render_options
             ]
         except Exception:
             raise self.ParamError("Display Options")

@@ -5,13 +5,13 @@ import time
 import maya.cmds as cmds
 
 from ..base_controller import BaseBlastController, PlayblastError, \
-    BlastInfo, MOV, AmbientOcclusionDisplayOption, MotionBlurDisplayOption, AntiAliasingDisplayOption, \
-    DepthOfFieldDisplayOption
+    BlastInfo, MOV, AmbientOcclusionRenderOption, MotionBlurRenderOption, AntiAliasingRenderOption, \
+    DepthOfFieldRenderOption
 
 from . import maya_utils
 
 
-class MayaAmbientOcclusionDisplayOption(AmbientOcclusionDisplayOption):
+class MayaAmbientOcclusionRenderOption(AmbientOcclusionRenderOption):
     def _store_to_restore(self):
         import maya
         self._to_restore = maya.cmds.getAttr("hardwareRenderingGlobals.ssaoEnable")
@@ -25,7 +25,7 @@ class MayaAmbientOcclusionDisplayOption(AmbientOcclusionDisplayOption):
         maya.cmds.setAttr("hardwareRenderingGlobals.ssaoEnable", self._to_restore)
 
 
-class MayaMotionBlurDisplayOption(MotionBlurDisplayOption):
+class MayaMotionBlurRenderOption(MotionBlurRenderOption):
 
     def _store_to_restore(self):
         import maya
@@ -41,7 +41,7 @@ class MayaMotionBlurDisplayOption(MotionBlurDisplayOption):
         maya.cmds.setAttr("hardwareRenderingGlobals.motionBlurEnable", self._to_restore)
 
 
-class MayaDepthOfFieldDisplayOption(DepthOfFieldDisplayOption):
+class MayaDepthOfFieldRenderOption(DepthOfFieldRenderOption):
 
     def _store_to_restore(self):
         import maya
@@ -82,7 +82,7 @@ class MayaDepthOfFieldDisplayOption(DepthOfFieldDisplayOption):
         return camera
 
 
-class MayaAntiAliasingDisplayOption(AntiAliasingDisplayOption):
+class MayaAntiAliasingRenderOption(AntiAliasingRenderOption):
 
     def _store_to_restore(self):
         import maya
@@ -146,11 +146,50 @@ class MayaBlastController(BaseBlastController):
         'SelectionHighlighting': 'SelectionItemPB',
     }
 
-    ALL_DISPLAY_OPTION_TYPES = (
-        MayaAmbientOcclusionDisplayOption,
-        MayaAntiAliasingDisplayOption,
-        MayaMotionBlurDisplayOption,
-        MayaDepthOfFieldDisplayOption
+    KWARG_TO_OPTION_VAR = {
+        "polymeshes": "playblastShowPolyMeshes",
+        "subdivSurfaces": "playblastShowSubdivSurfaces",
+        "planes": "playblastShowPlanes",
+        "lights": "playblastShowLights",
+        "cameras": "playblastShowCameras",
+        "joints": "playblastShowJoints",
+        "ikHandles": "playblastShowIKHandles",
+        "deformers": "playblastShowDeformers",
+        "dynamics": "playblastShowDynamics",
+        "particleInstancers": "playblastShowParticleInstancers",
+        "fluids": "playblastShowFluids",
+        "hairSystems": "playblastShowHairSystems",
+        "follicles": "playblastShowFollicles",
+        "nCloths": "playblastShowNCloths",
+        "nParticles": "playblastShowNParticles",
+        "nRigids": "playblastShowNRigids",
+        "dynamicConstraints": "playblastShowDynamicConstraints",
+        "locators": "playblastShowLocators",
+        "dimensions": "playblastShowDimensions",
+        "pivots": "playblastShowPivots",
+        "handles": "playblastShowHandles",
+        "textures": "playblastShowTextures",
+        "strokes": "playblastShowStrokes",
+        "motionTrails": "playblastShowMotionTrails",
+        "pluginShapes": "playblastShowPluginShapes",
+        "manipulators": "playblastShowManipulators",
+        "clipGhosts": "playblastShowClipGhosts",
+        "bluePencil": "playblastShowBluePencil",
+        "cv": "playblastShowCVs",
+        "hulls": "playblastShowHulls",
+        "grid": "playblastShowGrid",
+        "hud": "playblastShowHUD",
+        "hos": "playblastShowHoldOuts",
+        "sel": "playblastShowSelectionHighlighting",
+        "imagePlane": "playblastShowImagePlane",
+        "nurbsCurves": "playblastShowNURBSCurves"
+    }
+
+    ALL_RENDER_OPTION_TYPES = (
+        MayaAmbientOcclusionRenderOption,
+        MayaAntiAliasingRenderOption,
+        MayaMotionBlurRenderOption,
+        MayaDepthOfFieldRenderOption
     )
     ALL_DISPLAY_TYPES = list(_DISPLAY_TYPE_TO_MENU_NAME.keys())
 
@@ -293,7 +332,7 @@ class MayaBlastController(BaseBlastController):
                     path, blast.blast_type, maya.cmds.shot(shot, q=True, currentCamera=True),
                     None, start, end,
                     blast.display_types, blast.bg_color,
-                    blast.display_options, blast.hud_options,
+                    blast.render_options, blast.hud_options,
                     blast.width, blast.height,
                     cmds.shot(shot, q=True, scale=True)
                 ))
@@ -302,7 +341,7 @@ class MayaBlastController(BaseBlastController):
                 blast.sounds = maya_utils.get_all_audios(blast.start, blast.end)
             blasts = [(
                 path, blast.blast_type, blast.camera, blast.sounds, blast.start, blast.end, blast.display_types,
-                blast.bg_color, blast.display_options,
+                blast.bg_color, blast.render_options,
                 blast.hud_options, blast.display_grid, blast.width, blast.height, blast.scale
             )]
         self._make_meta_data_file(blast)
@@ -355,17 +394,40 @@ class MayaBlastController(BaseBlastController):
 
         return restore_data
 
+    def get_playblast_show_overrides(self) -> dict:
+        kwargs = {}
+        for kwarg, option in self.KWARG_TO_OPTION_VAR.items():
+            if cmds.optionVar(exists=option):
+                kwargs[kwarg] = cmds.optionVar(query=option)
+        return kwargs
+
+    def apply_viewport_display(self, model_panel, overrides):
+        overrides = dict(overrides)
+        for key, value in overrides.items():
+            cmds.modelEditor(model_panel, edit=True, **{key: value})
+
+    def get_model_panel_state(self, model_panel: str) -> dict:
+        kwargs = {}
+        for kwarg in self.KWARG_TO_OPTION_VAR:
+            value = cmds.modelEditor(model_panel, query=True, **{kwarg: True})
+            kwargs[kwarg] = value
+
+        return kwargs
+
     def _apply_playblast_display(self, display_types):
+        """
+        Applies given display types to the playblast display (not viewport display)
+        """
         maya = self._get_maya()
 
         try:
             for display_type, menu_name in self._DISPLAY_TYPE_TO_MENU_NAME.items():
-                maya.cmds.optionVar(intValue=('playblastShow%s' % display_type, display_type in display_types))
+                maya.cmds.optionVar(intValue=(f"playblastShow{display_type}", display_type in display_types))
 
             for display_type, menu_name in self._DISPLAY_TYPE_TO_MENU_NAME.items():
-                maya.mel.eval('updatePlayblastMenus("playblastShow%s", "show%s");' % (display_type, menu_name))
+                maya.mel.eval(f'updatePlayblastMenus("playblastShow{display_type}", "show{menu_name}");')
         except RuntimeError as err:
-            print("RuntimeError cannot update display: %r" % err)
+            print(f"RuntimeError cannot update display: {err}")
 
     def _apply_cam_overrides(self):
         maya = self._get_maya()
@@ -389,44 +451,24 @@ class MayaBlastController(BaseBlastController):
                              verticalFilmOffset=0)
         return restore_data
 
-    def _apply_display_overrides(self, display_grid=False):
+    def _apply_display_overrides(self, model_panel):
         maya = self._get_maya()
-        restore_data = {}
 
-        model_panel = self._get_visible_model_panel()
         if model_panel:
-            display_flags = (
-                ('activeOnly', 0),
-                ('wireframeOnShaded', 0),
-                ('headsUpDisplay', 1),
-                ('selectionHiliteDisplay', 0),
-                ('nurbsCurves', 0),
-                ('polymeshes', 1),
-                ('lights', 0),
-                ('cameras', 0),
-                ('grid', display_grid),
-                ('hulls', 0),
-                ('joints', 0),
-                ('ikHandles', 0),
-                ('deformers', 0),
-                ('fluids', 0),
-                ('follicles', 0),
-                ('dynamicConstraints', 0),
-                ('locators', 0),
-                ('manipulators', 0),
-                ('dimensions', 0),
-                ('handles', 0),
-                ('pivots', 0),
-            )
+            display_flags = []
             changed_flags = []
+            for display_flag in self._DISPLAY_TYPE_TO_MENU_NAME.keys():
+                display_flags.append((display_flag, maya.cmds.optionVar(q=f"playblastShow{display_flag}")))
+
             for flag, value in display_flags:
-                current_value = maya.cmds.modelEditor(model_panel, q=True, **{flag: True})
-                if current_value != value:
-                    changed_flags.append((flag, current_value))
-                    maya.cmds.modelEditor(model_panel, e=True, **{flag: value})
-            restore_data['model_panel'] = model_panel
-            restore_data['changed_flags'] = changed_flags
-        return restore_data
+                try:
+                    current_value = maya.cmds.modelEditor(model_panel, q=True, **{flag: True})
+                except Exception as e:
+                    print(e)
+                else:
+                    if current_value != value:
+                        changed_flags.append((flag, current_value))
+                        maya.cmds.modelEditor(model_panel, e=True, **{flag: value})
 
     def _apply_background_overrides(self, bg_color_name):
         if not bg_color_name:
@@ -678,46 +720,63 @@ class MayaBlastController(BaseBlastController):
                 pass  # I don't know why but Maya say 'headsUpDisplayLabels' is an unknown display color name
 
     @contextlib.contextmanager
-    def _blast_context(self, cam, start, end, display_types,
-                       bg_color, display_options, hud_options, display_grid):
+    def _blast_context(
+            self,
+            cam,
+            start,
+            end,
+            display_types,
+            bg_color,
+            render_options,
+            hud_options,
+            display_grid
+    ):
+
         maya = self._get_maya()
+        restore_data = {}
+
         is_gui = not maya.cmds.about(batch=True)
         cam = cam or self.default_camera
 
-        restore_data = self._set_camera(cam)
+        model_panel = self._get_visible_model_panel()
+        display_original_state = self.get_model_panel_state(model_panel)
 
-        maya.cmds.optionVar(intValue=('playblastOverrideViewport', True))
-        self._apply_playblast_display(display_types)
-        restore_data.update(self._apply_cam_overrides())
-        restore_data.update(self._apply_display_overrides(display_grid=display_grid))
-
-        if is_gui and hud_options is not None:
-            restore_data.update(self._add_playblast_hud(cam, start, end, hud_options))
-            maya.mel.eval('updatePlayblastMenus("playblastOverrideViewport","overrideViewportItemPB");')
+        render_options_instances = []
 
         image_format = maya.cmds.getAttr('defaultRenderGlobals.imageFormat')
         maya.cmds.setAttr('defaultRenderGlobals.imageFormat', 32)
 
-        restore_data.update(self._apply_background_overrides(bg_color))
-        display_options_instances = self._apply_playblast_display_options(display_options)
-
         try:
+            maya.cmds.optionVar(intValue=('playblastOverrideViewport', True))
+
+            restore_data = self._set_camera(cam)
+            if is_gui and hud_options is not None:
+                restore_data.update(self._add_playblast_hud(cam, start, end, hud_options))
+                maya.mel.eval('updatePlayblastMenus("playblastOverrideViewport","overrideViewportItemPB");')
+
+            self._apply_playblast_display(display_types)
+            playblast_display_overrides = self.get_playblast_show_overrides()
+            self.apply_viewport_display(model_panel, playblast_display_overrides)
+            restore_data.update(self._apply_background_overrides(bg_color))
+            render_options_instances = self._apply_render_options(render_options)
+
+            restore_data.update(self._apply_cam_overrides())
             yield
         except Exception:
             raise
         finally:
-            self._restore_display_options(display_options_instances)
-            self._restore_background_overrides(restore_data)
-
-            maya.cmds.setAttr('defaultRenderGlobals.imageFormat', image_format)
-
             if is_gui:
                 maya.mel.eval('updatePlayblastMenus("playblastOverrideViewport","overrideViewportItemPB");')
                 self._clear_hud()
                 self._restore_hud_overrides(restore_data)
 
-            self._restore_display_overrides(restore_data)
+            self._restore_render_options(render_options_instances)
+            self._restore_background_overrides(restore_data)
+
+            maya.cmds.setAttr('defaultRenderGlobals.imageFormat', image_format)
+
             self._restore_cam_overrides(restore_data)
+            self.apply_viewport_display(model_panel, display_original_state)
             maya.cmds.optionVar(intValue=('playblastOverrideViewport', False))
 
             self._restore_camera(restore_data)
@@ -744,15 +803,15 @@ class MayaBlastController(BaseBlastController):
         return focal
 
     @staticmethod
-    def _apply_playblast_display_options(display_options):
-        display_options_instances = []
-        for display_option_type_name, active in display_options:
-            display_option = eval(display_option_type_name + '()')
-            display_option.set_active(active)
-            display_options_instances.append(display_option)
-            display_option.apply()
+    def _apply_render_options(render_options):
+        render_option_instances = []
+        for render_option_type_name, active in render_options:
+            render_option = eval(render_option_type_name + '()')
+            render_option.set_active(active)
+            render_option_instances.append(render_option)
+            render_option.apply()
 
-        return display_options_instances
+        return render_option_instances
 
     def _make_meta_data_file(self, blast):
         import shutil
@@ -825,12 +884,35 @@ class MayaBlastController(BaseBlastController):
         blast.write_info(True)
         return meta_file
 
-    def _do_one_blast(self, path, blast_type, camera, sounds, start, end, display_types, bg_color,
-                      display_options, hud_options, display_grid, width, height, scale):
+    def _do_one_blast(
+            self,
+            path,
+            blast_type,
+            camera,
+            sounds,
+            start,
+            end,
+            display_types,
+            bg_color,
+            render_options,
+            hud_options,
+            display_grid,
+            width,
+            height,
+            scale
+    ):
         maya = self._get_maya()
 
-        with self._blast_context(camera, start, end, display_types, bg_color,
-                                 display_options, hud_options, display_grid):
+        with (self._blast_context(
+                camera,
+                start,
+                end,
+                display_types,
+                bg_color,
+                render_options,
+                hud_options,
+                display_grid)
+        ):
             blast_dir, filename = os.path.split(path)
             filename = filename.split('.')[0]
 
@@ -872,7 +954,6 @@ class MayaBlastController(BaseBlastController):
         cmds = maya.cmds
         path = blast.get_file_path()
         path, extension = os.path.splitext(path)
-        print(f"{path=}")
 
         if blast.use_sequencer:
             blasts = []
@@ -889,7 +970,7 @@ class MayaBlastController(BaseBlastController):
                     path, blast_type, maya.cmds.shot(shot, q=True, currentCamera=True),
                     None, start, end,
                     blast.display_types, blast.bg_color,
-                    blast.display_options, blast.hud_options, blast.display_grid,
+                    blast.render_options, blast.hud_options, blast.display_grid,
                     blast.width, blast.height,
                     cmds.shot(shot, q=True, scale=True)
                 ))
@@ -898,7 +979,7 @@ class MayaBlastController(BaseBlastController):
                 blast.sounds = maya_utils.get_all_audios(blast.start, blast.end)
             blasts = [(
                 path, blast_type, blast.camera, blast.sounds, blast.start, blast.end, blast.display_types,
-                blast.bg_color, blast.display_options,
+                blast.bg_color, blast.render_options,
                 blast.hud_options, blast.display_grid, blast.width, blast.height, blast.scale
             )]
 

@@ -16,10 +16,10 @@ class PlayblastError(RuntimeError):
     pass
 
 
-class DisplayOption(object):
+class RenderOption(object):
 
     def __init__(self):
-        super(DisplayOption, self).__init__()
+        super(RenderOption, self).__init__()
 
         self.w = None
         self.active = True
@@ -86,7 +86,7 @@ class DisplayOption(object):
         return self._restore()
 
 
-class AmbientOcclusionDisplayOption(DisplayOption):
+class AmbientOcclusionRenderOption(RenderOption):
 
     def name(self):
         return 'Ambient Occlusion'
@@ -96,7 +96,7 @@ class AmbientOcclusionDisplayOption(DisplayOption):
         self.update_controls()
 
 
-class MotionBlurDisplayOption(DisplayOption):
+class MotionBlurRenderOption(RenderOption):
 
     def name(self):
         return 'Motion Blur'
@@ -106,7 +106,7 @@ class MotionBlurDisplayOption(DisplayOption):
         self.update_controls()
 
 
-class DepthOfFieldDisplayOption(DisplayOption):
+class DepthOfFieldRenderOption(RenderOption):
 
     def name(self):
         return 'Depth Of Field'
@@ -116,7 +116,7 @@ class DepthOfFieldDisplayOption(DisplayOption):
         self.update_controls()
 
 
-class AntiAliasingDisplayOption(DisplayOption):
+class AntiAliasingRenderOption(RenderOption):
 
     def name(self):
         return 'Anti-Aliasing'
@@ -144,7 +144,7 @@ class BlastInfo(object):
         "sounds",
         "camera",
         "display_types",
-        "display_options",
+        "render_options",
         "hud_options",
         "timestamp",
         "meta_file",
@@ -185,7 +185,7 @@ class BlastInfo(object):
     @classmethod
     def create(cls, blast_path, scene_path, blast_type, camera, sounds,
                start, end, width, height, scale, bg_color,
-               display_types, display_options, hud_options, frame_rate,
+               display_types, render_options, hud_options, frame_rate,
                use_sequencer=False, display_grid=False):
         path = blast_path
         timestamp = time.time()
@@ -215,7 +215,7 @@ class BlastInfo(object):
         blast.scale = scale
         blast.bg_color = bg_color
         blast.display_types = display_types
-        blast.display_options = display_options  # list of option_type_str:active_bool
+        blast.render_options = render_options
         blast.timestamp = timestamp
         blast.hud_options = hud_options
         blast.use_sequencer = use_sequencer
@@ -239,7 +239,7 @@ class BlastInfo(object):
         self.display_types = self.camera = ''
         self.sounds = []
         self.sounds_files = self.meta_file = None
-        self.display_options = []
+        self.render_options = []
         self.hud_options = {}
         self.seq_disk_range = (-1, -1)
         self.use_sequencer = self.has_mov = self.has_seq = self.display_grid = False
@@ -254,7 +254,7 @@ class BlastInfo(object):
         self.scale = 1
         self.bg_color = (160, 160, 160)
         self.display_types = '???'
-        self.display_options = []
+        self.render_options = []
         self.hud_options = {}
         self.timestamp = 0
         self.camera = ''
@@ -398,8 +398,23 @@ class BaseBlastController(object):
         self.local_path = local_path
         self.scene_path = os.path.abspath(scene_path)
 
-    def blast(self, blast_type, camera, sounds, start, end, width, height, scale, bg_color,
-              display_types, display_options, hud_options, use_sequencer=False, display_grid=False):
+    def blast(
+            self,
+            blast_type,
+            camera,
+            sounds,
+            start,
+            end,
+            width,
+            height,
+            scale,
+            bg_color,
+            display_types,
+            render_options,
+            hud_options,
+            use_sequencer=False,
+            display_grid=False
+    ):
         """
         Make a new blast into the defined local path.
         :param blast_type: Blast type, can be playblast_manager.MOV or playblast_manager.SEQ. the first one make a
@@ -416,7 +431,7 @@ class BaseBlastController(object):
         :param bg_color: tuple of RGB defining the background color. Can be None, in this case, the background should
         be transparent.
         :param display_types:
-        :param display_options: list
+        :param render_options: list
         :param hud_options: dict with different parameter defining HUD appearance ('text_background', 'text_color',
         'block_size', ...)
         :param use_sequencer: Use the maya camera sequencer to make the blast
@@ -425,12 +440,26 @@ class BaseBlastController(object):
         """
         frame_rate = self.get_frame_rate()
         scene_name = self._assert_current_scene()
-        blast = BlastInfo.create(self.local_path, scene_name, blast_type, camera, sounds,
-                                 start, end, width, height, scale, bg_color,
-                                 display_types,
-                                 display_options, hud_options, frame_rate, use_sequencer,
-                                 display_grid=display_grid)
-        print('Blast Created: %s', blast.path)
+        blast = BlastInfo.create(
+            self.local_path,
+            scene_name,
+            blast_type,
+            camera,
+            sounds,
+            start,
+            end,
+            width,
+            height,
+            scale,
+            bg_color,
+            display_types,
+            render_options,
+            hud_options,
+            frame_rate,
+            use_sequencer,
+            display_grid=display_grid
+        )
+        print(f"Blast Created: {blast.path}")
         self.do_blast(blast_type, blast)
         return blast
 
@@ -444,13 +473,13 @@ class BaseBlastController(object):
         return BlastInfo.get_history(self.local_path)
 
     @staticmethod
-    def _restore_display_options(display_options_instances):
+    def _restore_render_options(render_options_instances):
         """
         Restores the display options  of the given instances
-        :param list(_DisplayOption) display_options_instances:
+        :param list(RenderOption) render_options_instances:
         """
-        for display_option in display_options_instances:
-            display_option.restore()
+        for render_option in render_options_instances:
+            render_option.restore()
 
     def get_montage_range(self):
         """
