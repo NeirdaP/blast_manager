@@ -69,25 +69,36 @@ class PlayerPanel(QtWidgets.QWidget):
         self.current_frame_display_button.clicked.connect(self.refresh_frame_count_display)
 
         self.play_button = QtWidgets.QPushButton()
+        self.play_button.setToolTip("Play/Pause")
+
         self.play_button.setIcon(
             icons.get_icon("play.png")
         )
         self.play_button.clicked.connect(self.play)
 
         self.next_frame_button = QtWidgets.QPushButton()
+        self.next_frame_button.setToolTip("Next frame")
         self.next_frame_button.setIcon(icons.get_icon("next_frame.png"))
         self.next_frame_button.setCheckable(False)
         self.next_frame_button.pressed.connect(self.move_next_frame)
 
         self.previous_frame_button = QtWidgets.QPushButton()
+        self.previous_frame_button.setToolTip("Previous frame")
         self.previous_frame_button.setIcon(icons.get_icon("previous_frame.png"))
 
         self.previous_frame_button.setCheckable(False)
         self.previous_frame_button.pressed.connect(self.move_previous_frame)
 
-        self.disable_control_buttons()
-
         self.time_slider = TimeSlider(self)
+        self.loop_button = QtWidgets.QPushButton()
+        self.loop_button.setToolTip("Continuous loop")
+        self.loop_button.setCheckable(True)
+        self.loop_button.setEnabled(True)
+        self.loop_button.setChecked(True)
+        self.loop_button.setIcon(icons.get_icon("loop_activated.png"))
+        self.loop_button.pressed.connect(self.loop_button_pressed)
+
+        self.disable_control_buttons()
 
         self.error_label = QtWidgets.QLabel()
         self.error_label.setSizePolicy(QtWidgets.QSizePolicy.Preferred,
@@ -102,6 +113,7 @@ class PlayerPanel(QtWidgets.QWidget):
         control_layout.addWidget(self.previous_frame_button, 1, 1)
         control_layout.addWidget(self.next_frame_button, 1, 2)
         control_layout.addWidget(self.time_slider, 1, 3)
+        control_layout.addWidget(self.loop_button, 1, 4)
 
         self.player_layout = QtWidgets.QVBoxLayout()
         self.player_layout.addWidget(self.player)
@@ -135,11 +147,14 @@ class PlayerPanel(QtWidgets.QWidget):
         Triggered when the playblast ended in the player
         Pauses the player
         """
-        self.time_line.setPaused(True)
-        self.time_line.setStartFrame(1)
-        self.play_button.setIcon(icons.get_icon("play.png"))
-
-        self.playing = False
+        if self.loop_button.isChecked():
+            self.playing = True
+            self.time_line.setCurrentTime(0)
+            self.time_line.resume()
+        else:
+            self.time_line.setPaused(True)
+            self.play_button.setIcon(icons.get_icon("play.png"))
+            self.playing = False
 
     def frame_changed(self):
         """
@@ -240,13 +255,19 @@ class PlayerPanel(QtWidgets.QWidget):
         target_frame = current_frame - 1
         self.move_to_frame(target_frame)
 
+    def loop_button_pressed(self):
+        if self.loop_button.isChecked():
+            self.loop_button.setIcon(icons.get_icon("loop.png"))
+        else:
+            self.loop_button.setIcon(icons.get_icon("loop_activated.png"))
+
     def disable_control_buttons(self):
         """
         Disables the control buttons (play, previous frame, next frame)
         Used when first opening the playblast manager, when no blast is selected
         """
         for button in [self.play_button, self.previous_frame_button, self.next_frame_button,
-                       self.current_frame_display_button]:
+                       self.current_frame_display_button, self.loop_button]:
             button.setEnabled(False)
 
     def enable_control_buttons(self):
@@ -255,7 +276,7 @@ class PlayerPanel(QtWidgets.QWidget):
         Used when opening a blast in the player
         """
         for button in [self.play_button, self.previous_frame_button, self.next_frame_button,
-                       self.current_frame_display_button]:
+                       self.current_frame_display_button, self.loop_button]:
             button.setEnabled(True)
 
     def duration_changed(self, duration):
