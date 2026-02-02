@@ -69,17 +69,21 @@ class PlayerPanel(QtWidgets.QWidget):
         self.current_frame_display_button.clicked.connect(self.refresh_frame_count_display)
 
         self.play_button = QtWidgets.QPushButton()
+        self.play_button.setToolTip("Play/Pause")
+
         self.play_button.setIcon(
             icons.get_icon("play.png")
         )
         self.play_button.clicked.connect(self.play)
 
         self.next_frame_button = QtWidgets.QPushButton()
+        self.next_frame_button.setToolTip("Next frame")
         self.next_frame_button.setIcon(icons.get_icon("next_frame.png"))
         self.next_frame_button.setCheckable(False)
         self.next_frame_button.pressed.connect(self.move_next_frame)
 
         self.previous_frame_button = QtWidgets.QPushButton()
+        self.previous_frame_button.setToolTip("Previous frame")
         self.previous_frame_button.setIcon(icons.get_icon("previous_frame.png"))
 
         self.previous_frame_button.setCheckable(False)
@@ -87,6 +91,7 @@ class PlayerPanel(QtWidgets.QWidget):
 
         self.time_slider = TimeSlider(self)
         self.loop_button = QtWidgets.QPushButton()
+        self.loop_button.setToolTip("Continuous loop")
         self.loop_button.setCheckable(True)
         self.loop_button.setEnabled(True)
         self.loop_button.setChecked(True)
