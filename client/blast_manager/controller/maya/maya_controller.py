@@ -1072,12 +1072,9 @@ class MayaBlastController(BaseBlastController):
 
 def get_maya_main_window(on_fail_message=""):
     from qtpy import QtWidgets
+    from qtpy.shiboken import wrapInstance
 
-    try:
-        from shiboken import wrapInstance  # @UnresolvedImport
-    except ImportError:
-        from shiboken2 import wrapInstance
-    import maya.OpenMayaUI  # @UnresolvedImport
+    import maya.OpenMayaUI
 
     mw = None
     ptr = maya.OpenMayaUI.MQtUtil.mainWindow()

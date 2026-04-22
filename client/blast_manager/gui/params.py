@@ -65,7 +65,7 @@ class CtrlWidget(QtWidgets.QWidget):
             return None
 
         tool_butt = QtWidgets.QToolButton(parent)
-        tool_butt.setPopupMode(tool_butt.InstantPopup)
+        tool_butt.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
         tool_butt.setIcon(THREE_DOTS_ICON)
 
         tool_butt.setStyleSheet(
